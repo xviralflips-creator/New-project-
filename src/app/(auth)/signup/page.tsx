@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { emailSignUp } from "@/lib/firebase/auth";
+import { friendlyError } from "@/lib/firebase/errors";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,15 +28,8 @@ export default function SignupPage() {
       await emailSignUp(email, password, name);
       toast.success("Account created. Check your email to verify.");
       router.push("/dashboard");
-    } catch (e) {
-      const code = (e as { code?: string }).code ?? "";
-      toast.error(
-        code === "auth/email-already-in-use"
-          ? "That email is already registered."
-          : code === "auth/weak-password"
-          ? "That password is too weak."
-          : (e as Error).message
-      );
+    } catch (err) {
+      toast.error(friendlyError(err));
     } finally {
       setSubmitting(false);
     }

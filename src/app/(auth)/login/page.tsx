@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { emailSignIn } from "@/lib/firebase/auth";
+import { friendlyError } from "@/lib/firebase/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -27,15 +28,8 @@ function LoginForm() {
       await emailSignIn(email, password);
       toast.success("Welcome back!");
       router.push(next);
-    } catch (e) {
-      const code = (e as { code?: string }).code ?? "";
-      toast.error(
-        code === "auth/invalid-credential" || code === "auth/wrong-password"
-          ? "Invalid email or password."
-          : code === "auth/user-not-found"
-          ? "No account with that email."
-          : (e as Error).message
-      );
+    } catch (err) {
+      toast.error(friendlyError(err));
     } finally {
       setSubmitting(false);
     }

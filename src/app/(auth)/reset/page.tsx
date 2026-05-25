@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { resetPassword } from "@/lib/firebase/auth";
+import { friendlyError } from "@/lib/firebase/errors";
 
 export default function ResetPage() {
   const [email, setEmail] = useState("");
@@ -19,8 +20,8 @@ export default function ResetPage() {
       await resetPassword(email);
       setSent(true);
       toast.success("Reset link sent.");
-    } catch (e) {
-      toast.error((e as Error).message ?? "Could not send reset link.");
+    } catch (err) {
+      toast.error(friendlyError(err, "Could not send reset link."));
     } finally {
       setSubmitting(false);
     }

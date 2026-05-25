@@ -21,6 +21,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { getDb, getFirebaseAuth } from "./client";
+import { isFirestorePermissionError } from "./errors";
 import type { Role, UserProfile } from "../types";
 
 const DEFAULTS = {
@@ -47,24 +48,14 @@ function profileFromUser(user: User): UserProfile {
   };
 }
 
-function isPermissionError(e: unknown): boolean {
-  const code = (e as { code?: string }).code ?? "";
-  const msg = (e as { message?: string }).message ?? "";
-  return (
-    code === "permission-denied" ||
-    code.includes("insufficient") ||
-    /missing or insufficient permissions/i.test(msg)
-  );
-}
-
 /**
  * Best-effort sync of `users/{uid}` in Firestore.
  *
- * If Firestore is unreachable or denies the write (because security rules
- * haven't been deployed yet), we DON'T crash the auth flow — we just return
- * an in-memory profile based on the FirebaseAuth user. The dashboard then
- * shows a "Firestore rules need to be deployed" banner so the user can fix
- * it in 30 seconds via the Firebase Console.
+ * THIS FUNCTION NEVER THROWS. Permission errors, network errors, malformed
+ * data — all are caught and logged. Callers always receive a valid profile,
+ * either the freshly-loaded Firestore one or an in-memory fallback derived
+ * from the FirebaseAuth user. The dashboard shows a "Firestore rules need
+ * to be deployed" banner whenever a permission error is detected.
  */
 export async function ensureUserDoc(user: User): Promise<UserProfile> {
   const fallback = profileFromUser(user);
@@ -88,11 +79,9 @@ export async function ensureUserDoc(user: User): Promise<UserProfile> {
           updatedAt: serverTimestamp(),
         });
       } catch (e) {
-        if (isPermissionError(e)) {
-          warnRulesNotDeployed();
-          return fallback;
-        }
-        throw e;
+        if (isFirestorePermissionError(e)) warnRulesNotDeployed();
+        else logSyncWarning(e);
+        return fallback;
       }
       return fallback;
     }
@@ -107,8 +96,8 @@ export async function ensureUserDoc(user: User): Promise<UserProfile> {
         updatedAt: serverTimestamp(),
       });
     } catch (e) {
-      if (!isPermissionError(e)) throw e;
-      warnRulesNotDeployed();
+      if (isFirestorePermissionError(e)) warnRulesNotDeployed();
+      else logSyncWarning(e);
     }
 
     const data = snap.data() as Partial<UserProfile> & {
@@ -127,14 +116,15 @@ export async function ensureUserDoc(user: User): Promise<UserProfile> {
       updatedAt: data.updatedAt?.toMillis?.() ?? Date.now(),
     } as UserProfile;
   } catch (e) {
-    if (isPermissionError(e)) {
-      warnRulesNotDeployed();
-      return fallback;
-    }
-    // eslint-disable-next-line no-console
-    console.warn("[auth] Could not sync users/{uid} doc:", (e as Error).message);
+    if (isFirestorePermissionError(e)) warnRulesNotDeployed();
+    else logSyncWarning(e);
     return fallback;
   }
+}
+
+function logSyncWarning(e: unknown) {
+  // eslint-disable-next-line no-console
+  console.warn("[auth] Could not sync users/{uid} doc:", (e as Error).message);
 }
 
 let warned = false;

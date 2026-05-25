@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { githubSignIn, googleSignIn } from "@/lib/firebase/auth";
+import { friendlyError } from "@/lib/firebase/errors";
 import { Button } from "@/components/ui/button";
 
 function GoogleIcon() {
@@ -25,32 +26,6 @@ function GitHubIcon() {
   );
 }
 
-/**
- * Translate Firebase auth error codes into actionable messages.
- * The most common one in production is `auth/unauthorized-domain`,
- * which means the deployed origin isn't whitelisted in Firebase Auth.
- */
-function authErrorMessage(err: unknown): string {
-  const code = (err as { code?: string }).code ?? "";
-  switch (code) {
-    case "auth/popup-closed-by-user":
-    case "auth/cancelled-popup-request":
-      return "Sign-in cancelled.";
-    case "auth/popup-blocked":
-      return "Popup blocked. Allow popups for this site and try again.";
-    case "auth/unauthorized-domain":
-      return "This domain isn't authorized for Firebase Auth. Add it in Firebase Console → Authentication → Settings → Authorized domains.";
-    case "auth/operation-not-allowed":
-      return "This sign-in provider isn't enabled. Enable it in Firebase Console → Authentication → Sign-in method.";
-    case "auth/account-exists-with-different-credential":
-      return "An account already exists with this email under a different sign-in method.";
-    case "auth/network-request-failed":
-      return "Network error. Check your connection and try again.";
-    default:
-      return (err as Error).message || "Sign-in failed.";
-  }
-}
-
 export function SocialButtons() {
   const router = useRouter();
   const [busy, setBusy] = useState<"google" | "github" | null>(null);
@@ -62,8 +37,8 @@ export function SocialButtons() {
       else await githubSignIn();
       toast.success("Signed in");
       router.push("/dashboard");
-    } catch (e) {
-      toast.error(authErrorMessage(e));
+    } catch (err) {
+      toast.error(friendlyError(err));
     } finally {
       setBusy(null);
     }
