@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { collection, getCountFromServer, query, where } from "firebase/firestore";
 import {
