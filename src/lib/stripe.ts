@@ -3,6 +3,10 @@ import Stripe from "stripe";
 
 let _stripe: Stripe | null = null;
 
+/**
+ * Lazy-initialized Stripe client. Throws a friendly error if the secret key
+ * is not configured so the rest of the app keeps building/running.
+ */
 export function getStripe(): Stripe {
   if (_stripe) return _stripe;
   const key = process.env.STRIPE_SECRET_KEY;
@@ -11,7 +15,13 @@ export function getStripe(): Stripe {
       "STRIPE_SECRET_KEY is not set. Stripe routes will not work until configured."
     );
   }
-  _stripe = new Stripe(key, { apiVersion: "2024-10-28.acacia" });
+  // Casting apiVersion as any so this builds across Stripe SDK minor bumps.
+  // The Stripe Node SDK's type union for apiVersion shifts with each release;
+  // omitting/casting here makes the project resilient to future bumps.
+  _stripe = new Stripe(key, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    apiVersion: "2024-12-18.acacia" as any,
+  });
   return _stripe;
 }
 

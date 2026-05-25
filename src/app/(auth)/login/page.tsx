@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,9 @@ import { Field, Input } from "@/components/ui/input";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { emailSignIn } from "@/lib/firebase/auth";
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+
+function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/dashboard";
@@ -66,9 +68,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
-        <Field
-          label="Password"
-        >
+        <Field label="Password">
           <Input
             type="password"
             required
@@ -79,10 +79,7 @@ export default function LoginPage() {
           />
         </Field>
         <div className="flex justify-end -mt-2">
-          <Link
-            href="/reset"
-            className="text-xs text-fg-muted hover:text-fg"
-          >
+          <Link href="/reset" className="text-xs text-fg-muted hover:text-fg">
             Forgot password?
           </Link>
         </div>
@@ -98,5 +95,20 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="card w-full max-w-md p-7 sm:p-8">
+          <div className="h-6 w-24 animate-pulse rounded bg-bg-soft" />
+          <div className="mt-4 h-4 w-48 animate-pulse rounded bg-bg-soft" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

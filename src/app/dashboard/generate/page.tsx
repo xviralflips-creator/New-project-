@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowRight,
-  Cpu,
-  Layers,
-  Sparkles,
-  Wand2,
-  X,
-} from "lucide-react";
+import { ArrowRight, Cpu, Layers, Sparkles, Wand2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { useAuthStore } from "@/lib/store";
 import { createProject } from "@/lib/firebase/projects";
 import type { ProjectFile } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
 
 const PRESETS = [
   "Build a SaaS landing page for an AI fitness coach with hero, features, pricing, testimonials and FAQ — dark mode, glassmorphism.",
@@ -35,7 +30,7 @@ const STAGES = [
   "Finalizing & saving project…",
 ];
 
-export default function GeneratePage() {
+function GenerateForm() {
   const router = useRouter();
   const params = useSearchParams();
   const user = useAuthStore((s) => s.user);
@@ -237,5 +232,20 @@ export default function GeneratePage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-6 w-64 animate-pulse rounded bg-bg-soft" />
+          <div className="h-48 animate-pulse rounded-2xl bg-bg-soft" />
+        </div>
+      }
+    >
+      <GenerateForm />
+    </Suspense>
   );
 }

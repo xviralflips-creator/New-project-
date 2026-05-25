@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Download,
@@ -26,7 +25,6 @@ import { PreviewPane } from "./preview-pane";
 import { AIAssistMenu } from "./ai-assist-menu";
 
 export function IDEShell() {
-  const router = useRouter();
   const project = useIDEStore((s) => s.project);
   const files = useIDEStore((s) => s.files);
   const dirty = useIDEStore((s) => s.dirty);

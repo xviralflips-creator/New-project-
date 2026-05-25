@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatRelative } from "@/lib/utils";
 import { deleteProject } from "@/lib/firebase/projects";

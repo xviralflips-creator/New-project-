@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { collection, getCountFromServer, query, where } from "firebase/firestore";
 import {
   Cpu,
-  DollarSign,
   FlaskConical,
   Megaphone,
   Sparkles,
