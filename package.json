@@ -1,0 +1,43 @@
+{
+  "name": "nextgen-ai-builder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NextGen AI Builder — Generate, edit, preview, and deploy full-stack apps from natural language using Gemini AI.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@monaco-editor/react": "^4.6.0",
+    "clsx": "^2.1.1",
+    "firebase": "^11.0.2",
+    "framer-motion": "^11.11.17",
+    "lucide-react": "^0.460.0",
+    "next": "15.0.3",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-hot-toast": "^2.4.1",
+    "stripe": "^17.4.0",
+    "tailwind-merge": "^2.5.4",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/react": "npm:types-react@19.0.0-rc.1",
+    "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "@types/react": "npm:types-react@19.0.0-rc.1",
+    "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1"
+  }
+}

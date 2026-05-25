@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','super_admin','moderator'];
+    }
+
+    // users: each user can read/update their own doc; admins can read all.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // projects: owners + collaborators read/write; admins read all.
+    match /projects/{projectId} {
+      allow read: if isAdmin() ||
+        (isSignedIn() && (resource.data.ownerId == request.auth.uid ||
+                          request.auth.uid in resource.data.collaborators));
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isAdmin() ||
+        (isSignedIn() && resource.data.ownerId == request.auth.uid);
+
+      match /versions/{versionId} {
+        allow read, write: if isAdmin() || (isSignedIn() &&
+          get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid);
+      }
+    }
+
+    // ai_generations: per-user logs, admin readable
+    match /ai_generations/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // subscriptions, invoices: server writes only (via Cloud Functions / API w/ Admin SDK)
+    match /subscriptions/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+    match /invoices/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // public collections
+    match /templates/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /feature_flags/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // admin-only
+    match /admin_settings/{id}        { allow read, write: if isAdmin(); }
+    match /moderation_logs/{id}       { allow read, write: if isAdmin(); }
+    match /API_usage_logs/{id}        { allow read, write: if isAdmin(); }
+    match /analytics/{id}             { allow read, write: if isAdmin(); }
+
+    // notifications: users see their own
+    match /notifications/{id} {
+      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin() || isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // support tickets
+    match /support_tickets/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // coupons
+    match /coupons/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
