@@ -55,7 +55,16 @@ export default function NotificationsPage() {
           })
         );
       },
-      () => setItems([])
+      (err) => {
+        const code = (err as { code?: string }).code ?? "";
+        if (code === "permission-denied" || code.includes("insufficient")) {
+          if (typeof window !== "undefined") {
+            (window as unknown as { __ngFirestoreRulesMissing?: boolean }).__ngFirestoreRulesMissing = true;
+            window.dispatchEvent(new CustomEvent("ng-firestore-rules-missing"));
+          }
+        }
+        setItems([]);
+      }
     );
     return unsub;
   }, [user]);

@@ -58,6 +58,27 @@ Then:
    > *"Build a SaaS landing page for an AI fitness coach with hero, features, pricing, testimonials, and FAQ. Dark mode, glassmorphism."*
 3. Edit in the IDE (`/dashboard/projects/[id]`) and watch the preview update on save.
 
+> ⚠️ **First-time deploy?** If you see *"Missing or insufficient permissions"*, you need to publish the Firestore security rules (one-time, takes 30 seconds). See [the Firestore rules section](#-firestore-rules-30-second-setup) below.
+
+---
+
+## 🔒 Firestore rules — 30-second setup
+
+Without security rules published, Firestore rejects every read/write. Here's the fastest fix (no CLI required):
+
+1. Open https://console.firebase.google.com/project/_/firestore/rules (pick your project).
+2. **Select all** in the editor and **paste the contents of [`firestore.rules`](./firestore.rules)** from this repo.
+3. Click **Publish**.
+
+That's it — sign-up, save-project, and dashboard reads will all start working. The app also has an in-product guide at `/help/firestore-rules` with a copy button.
+
+Alternatively, with the Firebase CLI installed:
+```bash
+npx firebase login
+npx firebase use <your-project-id>
+npx firebase deploy --only firestore:rules
+```
+
 ---
 
 ## 🔑 Environment variables

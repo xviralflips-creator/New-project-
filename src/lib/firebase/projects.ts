@@ -48,6 +48,17 @@ function projectFromDoc(id: string, data: Record<string, unknown>): Project {
   };
 }
 
+function isPermissionError(e: unknown): boolean {
+  const code = (e as { code?: string }).code ?? "";
+  return code === "permission-denied" || code.includes("insufficient");
+}
+
+function notifyRulesMissing() {
+  if (typeof window === "undefined") return;
+  (window as unknown as { __ngFirestoreRulesMissing?: boolean }).__ngFirestoreRulesMissing = true;
+  window.dispatchEvent(new CustomEvent("ng-firestore-rules-missing"));
+}
+
 export async function createProject(input: {
   ownerId: string;
   name: string;
@@ -74,7 +85,18 @@ export async function createProject(input: {
     versionCount: 0,
     status: "draft" as const,
   };
-  await setDoc(ref, data);
+  try {
+    await setDoc(ref, data);
+  } catch (e) {
+    if (isPermissionError(e)) {
+      notifyRulesMissing();
+      throw new Error(
+        "Couldn't save project — Firestore rules deny writes. " +
+          "Publish firestore.rules in Firebase Console → Firestore → Rules."
+      );
+    }
+    throw e;
+  }
   return projectFromDoc(ref.id, { ...data, createdAt: Date.now(), updatedAt: Date.now() });
 }
 
@@ -94,9 +116,17 @@ export async function deleteProject(id: string) {
 }
 
 export async function getProject(id: string): Promise<Project | null> {
-  const snap = await getDoc(doc(getDb(), "projects", id));
-  if (!snap.exists()) return null;
-  return projectFromDoc(snap.id, snap.data());
+  try {
+    const snap = await getDoc(doc(getDb(), "projects", id));
+    if (!snap.exists()) return null;
+    return projectFromDoc(snap.id, snap.data());
+  } catch (e) {
+    if (isPermissionError(e)) {
+      notifyRulesMissing();
+      return null;
+    }
+    throw e;
+  }
 }
 
 export function watchUserProjects(
@@ -110,20 +140,39 @@ export function watchUserProjects(
     orderBy("updatedAt", "desc"),
     limit(max)
   );
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => projectFromDoc(d.id, d.data())));
-  });
+  return onSnapshot(
+    q,
+    (snap) => cb(snap.docs.map((d) => projectFromDoc(d.id, d.data()))),
+    (err) => {
+      if (isPermissionError(err)) {
+        notifyRulesMissing();
+        cb([]);
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn("[projects] watchUserProjects error:", err.message);
+        cb([]);
+      }
+    }
+  );
 }
 
 export async function listUserProjects(ownerId: string, max = 50): Promise<Project[]> {
-  const q = query(
-    collection(getDb(), "projects"),
-    where("ownerId", "==", ownerId),
-    orderBy("updatedAt", "desc"),
-    limit(max)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => projectFromDoc(d.id, d.data()));
+  try {
+    const q = query(
+      collection(getDb(), "projects"),
+      where("ownerId", "==", ownerId),
+      orderBy("updatedAt", "desc"),
+      limit(max)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => projectFromDoc(d.id, d.data()));
+  } catch (e) {
+    if (isPermissionError(e)) {
+      notifyRulesMissing();
+      return [];
+    }
+    throw e;
+  }
 }
 
 export async function saveProjectVersion(
@@ -142,14 +191,18 @@ export async function saveProjectVersion(
     prompt: prompt ?? null,
     createdAt: serverTimestamp(),
   });
-  // bump count
-  const projRef = doc(db, "projects", projectId);
-  const projSnap = await getDoc(projRef);
-  const cur = (projSnap.data()?.versionCount as number) ?? 0;
-  await updateDoc(projRef, {
-    versionCount: cur + 1,
-    updatedAt: serverTimestamp(),
-  });
+  // bump count (best-effort)
+  try {
+    const projRef = doc(db, "projects", projectId);
+    const projSnap = await getDoc(projRef);
+    const cur = (projSnap.data()?.versionCount as number) ?? 0;
+    await updateDoc(projRef, {
+      versionCount: cur + 1,
+      updatedAt: serverTimestamp(),
+    });
+  } catch {
+    // non-fatal
+  }
   return {
     id: ref.id,
     projectId,

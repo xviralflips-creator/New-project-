@@ -16,6 +16,7 @@ import {
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { FirestoreRulesBanner } from "@/components/app/firestore-rules-banner";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +100,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ThemeToggle />
             </header>
 
-            <main className="flex-1 px-6 py-6">{children}</main>
+            <main className="flex-1 px-6 py-6">
+              <FirestoreRulesBanner />
+              {children}
+            </main>
           </div>
         </div>
       </div>

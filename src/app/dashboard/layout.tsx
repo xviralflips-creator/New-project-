@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
+import { FirestoreRulesBanner } from "@/components/app/firestore-rules-banner";
 import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
@@ -48,6 +49,7 @@ export default function DashboardLayout({
         <div className="lg:pl-64">
           <Topbar onMenu={() => setOpen(true)} />
           <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <FirestoreRulesBanner />
             {children}
           </main>
         </div>
