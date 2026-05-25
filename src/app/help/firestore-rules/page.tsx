@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { CopyButton } from "@/components/ui/copy-button";
 
 export const metadata: Metadata = {
   title: "Publishing Firestore rules",
@@ -91,12 +92,24 @@ service cloud.firestore {
   }
 }`;
 
+const OPEN_RULES = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}`;
+
 export default function FirestoreRulesGuide() {
   return (
     <main className="min-h-screen bg-bg">
       <header className="mx-auto flex max-w-3xl items-center justify-between px-6 pt-6">
         <Logo />
-        <Link href="/" className="text-sm text-fg-muted hover:text-fg flex items-center gap-1.5">
+        <Link
+          href="/"
+          className="text-sm text-fg-muted hover:text-fg flex items-center gap-1.5"
+        >
           <ArrowLeft size={13} /> Home
         </Link>
       </header>
@@ -110,7 +123,10 @@ export default function FirestoreRulesGuide() {
           You only have to do this once per Firebase project. It takes about 30
           seconds. Without these rules, Firestore rejects all reads and writes
           with{" "}
-          <span className="font-mono text-xs">Missing or insufficient permissions</span>.
+          <span className="font-mono text-xs">
+            Missing or insufficient permissions
+          </span>
+          .
         </p>
 
         <ol className="mt-10 space-y-7 text-sm">
@@ -130,9 +146,7 @@ export default function FirestoreRulesGuide() {
           </Step>
 
           <Step n={2} title="Replace the entire editor contents">
-            <p className="mb-3">
-              Select all (⌘A / Ctrl+A) and paste this in:
-            </p>
+            <p className="mb-3">Select all (⌘A / Ctrl+A) and paste this in:</p>
             <div className="rounded-2xl border border-border bg-bg-soft/60 overflow-hidden">
               <div className="flex items-center justify-between border-b border-border px-4 py-2">
                 <span className="text-xs text-fg-subtle">firestore.rules</span>
@@ -158,15 +172,16 @@ export default function FirestoreRulesGuide() {
               proper auth, you can paste this open ruleset instead. Don&apos;t
               ship this to production — anyone can read/write your DB.
             </p>
-            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 font-mono text-[11px] leading-relaxed text-amber-200">
-{`rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}`}
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 overflow-hidden">
+              <div className="flex items-center justify-between border-b border-amber-500/30 px-4 py-2">
+                <span className="text-xs text-amber-300/70">
+                  open ruleset (testing only)
+                </span>
+                <CopyButton text={OPEN_RULES} className="text-amber-300/70 hover:text-amber-100" />
+              </div>
+              <pre className="p-4 font-mono text-[11px] leading-relaxed text-amber-200">
+                <code>{OPEN_RULES}</code>
+              </pre>
             </div>
           </Step>
         </ol>
@@ -177,7 +192,10 @@ service cloud.firestore {
             Firebase doesn&apos;t let a web client deploy security rules — that
             would defeat the whole point. Rules can only be deployed by a
             project owner via the Firebase Console or the Firebase CLI{" "}
-            <code className="font-mono text-xs">(firebase deploy --only firestore:rules)</code>.
+            <code className="font-mono text-xs">
+              (firebase deploy --only firestore:rules)
+            </code>
+            .
           </p>
         </div>
       </article>
@@ -204,18 +222,5 @@ function Step({
         <div className="mt-2 text-fg-muted">{children}</div>
       </div>
     </li>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  return (
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(text);
-      }}
-      className="rounded-md px-2 py-1 text-[11px] text-fg-muted hover:bg-bg-elev hover:text-fg"
-    >
-      Copy
-    </button>
   );
 }
